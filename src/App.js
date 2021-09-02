@@ -8,30 +8,14 @@ import MonacoEditor from '@uiw/react-monacoeditor'
 import beautify from 'json-beautify'
 
 import './App.css'
-import {dataLayer} from './map-style.js'
+import {fillStyle, strokeStyle} from './map-style.js'
 import defaultGeojson from './default-geojson.js'
 
 const MAPBOX_TOKEN = '' // Set your mapbox token here
 
-function getViewport(viewport, feature) {
-  const [minLng, minLat, maxLng, maxLat] = bbox(feature)
-  const vp = new WebMercatorViewport(viewport)
-  const {longitude, latitude, zoom} = vp.fitBounds(
-    [ [minLng, minLat], [maxLng, maxLat] ],
-    { padding: 20 }
-  )
-
-  return {
-    ...viewport,
-    longitude,
-    latitude,
-    zoom,
-    transitionInterpolator: new FlyToInterpolator(),
-    transitionDuration: 1000
-  }
-}
-
 export default function App() {
+  const [selectedFeature, setSelectedFeature] = useState(undefined)
+  const [geojsonData, setGeojsonData] = useState(defaultGeojson)
   const [viewport, setViewport] = useState({
     width: window.innerWidth * .6, // NOTE: this is a guess of the map width
     height: window.innerHeight,
@@ -42,12 +26,30 @@ export default function App() {
     pitch: 0
   })
 
-  const [geojsonData, setGeojsonData] = useState(defaultGeojson)
+  const getViewport = (viewport, feature) => {
+    const [minLng, minLat, maxLng, maxLat] = bbox(feature)
+    const vp = new WebMercatorViewport(viewport)
+    const {longitude, latitude, zoom} = vp.fitBounds(
+      [ [minLng, minLat], [maxLng, maxLat] ],
+      { padding: 20 }
+    )
+
+    return {
+      ...viewport,
+      longitude,
+      latitude,
+      zoom,
+      transitionInterpolator: new FlyToInterpolator(),
+      transitionDuration: 1000
+    }
+  }
 
   const onClick = event => {
     const feature = event.features[0]
+    console.log('event', event, 'feature', feature)
     if (feature) {
       setViewport(getViewport(viewport, feature))
+      setSelectedFeature(feature)
     }
   }
 
@@ -79,25 +81,33 @@ export default function App() {
           onClick={onClick}
           onViewportChange={setViewport}
           mapboxApiAccessToken={MAPBOX_TOKEN}
-          interactiveLayerIds={['data']}
+          interactiveLayerIds={['fill-style']}
         >
           { geojsonData && (
             <Source type="geojson" data={geojsonData}>
-              <Layer {...dataLayer} />
+              <Layer {...fillStyle} />
+              <Layer {...strokeStyle} />
             </Source>
           )}
         </MapGL>
       </div>
       <div id="panel">
-        <MonacoEditor
-          language="json"
-          width="100%"
-          value={jsonStr}
-          onChange={onEditorChange}
-          options={{
-            theme: 'vs-dark',
-          }}
-        />
+        <div id="props">
+          {
+            Object.keys(selectedFeature?.properties || {}).map(key => (<div>{key} - {selectedFeature.properties[key]}</div>))
+          }
+        </div>
+        <div id="editor">
+          <MonacoEditor
+            language="json"
+            width="100%"
+            value={jsonStr}
+            onChange={onEditorChange}
+            options={{
+              theme: 'vs-dark',
+            }}
+          />
+        </div>
       </div>
     </div>
   )

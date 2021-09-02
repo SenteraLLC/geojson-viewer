@@ -17,7 +17,9 @@ const defaultGeojson = {
           ]
         ]
       },
-      "properties": {}
+      "properties": {
+        "name": "Little Field Boundary"
+      }
     }
   ]
 }

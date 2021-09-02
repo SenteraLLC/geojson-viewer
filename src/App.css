@@ -28,6 +28,19 @@ body, html {
   width: 40%;
 }
 
+#props {
+  overflow-y: scroll;
+  height: 50%;
+}
+
+#editor {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  height: 50%;
+  width: 100%;
+}
+
 label {
   display: inline-block;
   width: 100px;
