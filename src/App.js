@@ -7,6 +7,11 @@ import bbox from '@turf/bbox'
 import MonacoEditor from '@uiw/react-monacoeditor'
 import beautify from 'json-beautify'
 
+import useMediaQuery from '@material-ui/core/useMediaQuery'
+import { createTheme, ThemeProvider } from '@material-ui/core/styles'
+import CssBaseline from '@material-ui/core/CssBaseline'
+import Paper from '@material-ui/core/Paper'
+
 import './App.css'
 import {fillStyle, strokeStyle} from './map-style.js'
 import defaultGeojson from './default-geojson.js'
@@ -50,6 +55,8 @@ export default function App() {
     if (feature) {
       setViewport(getViewport(viewport, feature))
       setSelectedFeature(feature)
+    } else {
+      setSelectedFeature(undefined)
     }
   }
 
@@ -70,46 +77,60 @@ export default function App() {
 
   const jsonStr = useMemo(() => beautify(geojsonData, null, 2, 100), [geojsonData])
 
+  const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)')
+  const theme = useMemo(
+    () =>
+    createTheme({
+      palette: {
+        type: prefersDarkMode ? 'dark' : 'light',
+      },
+    }),
+    [prefersDarkMode],
+  )
+
   return (
-    <div>
-      <div id="map">
-        <MapGL
-          {...viewport}
-          width="100%"
-          height="100%"
-          mapStyle="mapbox://styles/mapbox/light-v9"
-          onClick={onClick}
-          onViewportChange={setViewport}
-          mapboxApiAccessToken={MAPBOX_TOKEN}
-          interactiveLayerIds={['fill-style']}
-        >
-          { geojsonData && (
-            <Source type="geojson" data={geojsonData}>
-              <Layer {...fillStyle} />
-              <Layer {...strokeStyle} />
-            </Source>
-          )}
-        </MapGL>
-      </div>
-      <div id="panel">
-        <div id="props">
-          {
-            Object.keys(selectedFeature?.properties || {}).map(key => (<div>{key} - {selectedFeature.properties[key]}</div>))
-          }
-        </div>
-        <div id="editor">
-          <MonacoEditor
-            language="json"
+    <ThemeProvider theme={theme}>
+      <CssBaseline/>
+      <div>
+        <div id="map">
+          <MapGL
+            {...viewport}
             width="100%"
-            value={jsonStr}
-            onChange={onEditorChange}
-            options={{
-              theme: 'vs-dark',
-            }}
-          />
+            height="100%"
+            mapStyle="mapbox://styles/mapbox/light-v9"
+            onClick={onClick}
+            onViewportChange={setViewport}
+            mapboxApiAccessToken={MAPBOX_TOKEN}
+            interactiveLayerIds={['fill-style']}
+          >
+            { geojsonData && (
+              <Source type="geojson" data={geojsonData}>
+                <Layer {...fillStyle} />
+                <Layer {...strokeStyle} />
+              </Source>
+            )}
+          </MapGL>
+        </div>
+        <div id="panel">
+          <div id="props">
+            {
+              Object.keys(selectedFeature?.properties || {}).map(key => (<Paper><div class="prop-value">{key} - {selectedFeature.properties[key]}</div></Paper>))
+            }
+          </div>
+          <div id="editor">
+            <MonacoEditor
+              language="json"
+              width="100%"
+              value={jsonStr}
+              onChange={onEditorChange}
+              options={{
+                theme: 'vs-dark',
+              }}
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </ThemeProvider>
   )
 }
 
